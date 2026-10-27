@@ -6,7 +6,15 @@ Segue a estrutura de apps do [ecossistema](https://github.com/lucerna-desktop/lu
 
 ## Serviço
 
-O serviço só sobe quando o painel ou a TUI abre, por ativação de socket, e sai sozinho depois de um tempo sem clientes. Os dois são clientes dele, então nenhum mexe nas notas direto.
+O serviço só sobe quando um cliente (o painel, a TUI ou a linha de comando) abre, e sai sozinho depois de um tempo sem clientes. Todos são clientes dele, então nenhum mexe nas notas direto.
+
+Como ele sobe, no molde do ecossistema (spec do protocolo do `lucerna-sdk`):
+
+1. **Com systemd:** o cliente conecta ao `notes.sock`, e a própria conexão sobe o serviço (ativação de socket do systemd do usuário). Se o serviço cair, o systemd o reinicia.
+2. **Sem systemd** (ou sem a unidade instalada, ou em desenvolvimento): sem ninguém ouvindo no socket, o cliente roda `lucerna-notes serve` solto (num grupo de sessão próprio, com a saída num log em `$XDG_STATE_HOME`) e tenta conectar por até 2 s, com espera crescente. Se dois clientes fizerem isso juntos, o segundo `serve` não consegue ouvir e sai, e os dois conectam no primeiro. Depois de uma queda, quem sobe o serviço de novo é o próximo cliente.
+3. **Sem conseguir em 2 s:** a linha de comando sai com o código 2 ("sem serviço") e diz o porquê; a TUI mostra a causa. As notas continuam sendo arquivos Markdown, abertos por qualquer editor.
+
+Sem o shell, nada muda além de não haver painel: a TUI e a linha de comando fazem tudo.
 
 ## Painel e TUI
 
